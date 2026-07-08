@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>報回設定台</title>
+<style>
+  :root{
+    --canvas:#ffffff;
+    --canvas-subtle:#f6f8fa;
+    --canvas-inset:#f6f8fa;
+    --border:#d0d7de;
+    --border-muted:#d8dee4;
+    --fg:#1f2328;
+    --fg-muted:#656d76;
+    --accent:#0969da;
+    --success-fg:#1a7f37;
+    --success-emphasis:#1f883d;
+    --success-hover:#1a7f37;
+    --success-subtle:#dafbe1;
+    --success-border:rgba(31,136,61,.25);
+    --danger:#cf222e;
+    --btn-border:rgba(31,35,40,.15);
+    --shadow:0 1px 0 rgba(31,35,40,.04);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+
+  body{
+    background:var(--canvas);
+    color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",Helvetica,Arial,sans-serif;
+    font-size:14px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .wrap{max-width:1012px;margin:0 auto;padding:32px 24px 80px;}
+
+  /* ---- Header ---- */
+  header.top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    padding-bottom:16px;
+    border-bottom:1px solid var(--border);
+    margin-bottom:24px;
+  }
+  .title-block h1{
+    font-size:20px;
+    font-weight:600;
+    margin:0 0 2px;
+    letter-spacing:-.01em;
+  }
+  .title-block .sub{font-size:13px;color:var(--fg-muted);margin:0;max-width:640px;}
+
+  .btn{
+    font-family:inherit;
+    font-size:14px;
+    font-weight:500;
+    border-radius:6px;
+    padding:5px 16px;
+    cursor:pointer;
+    line-height:20px;
+    transition:background .12s ease,border-color .12s ease;
+    white-space:nowrap;
+  }
+  .btn-primary{
+    color:#fff;
+    background:var(--success-emphasis);
+    border:1px solid var(--btn-border);
+    box-shadow:var(--shadow);
+  }
+  .btn-primary:hover{background:var(--success-hover);}
+  .btn-primary .plus{margin-right:6px;font-weight:600;}
+
+  /* ---- Grid ---- */
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+    gap:16px;
+  }
+
+  /* ---- Card (GitHub Box) ---- */
+  .card{
+    background:var(--canvas);
+    border:1px solid var(--border);
+    border-radius:6px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+  .card-head{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:12px 16px;
+    background:var(--canvas-subtle);
+    border-bottom:1px solid var(--border);
+  }
+  .lamp{
+    width:10px;height:10px;border-radius:50%;
+    flex-shrink:0;
+    background:#d0d7de;
+    transition:background .2s ease,box-shadow .2s ease;
+  }
+  .card.active .lamp{
+    background:var(--success-emphasis);
+    box-shadow:0 0 0 3px var(--success-subtle);
+  }
+  .name-input{
+    flex:1;min-width:0;
+    font-family:inherit;
+    font-size:14px;font-weight:600;color:var(--fg);
+    border:1px solid transparent;background:transparent;
+    padding:3px 6px;border-radius:6px;outline:none;
+    transition:border-color .12s ease,background .12s ease;
+  }
+  .name-input:hover{border-color:var(--border);}
+  .name-input:focus{border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(9,105,218,.12);}
+  .name-input::placeholder{color:#8c959f;font-weight:500;}
+
+  .badge{
+    font-size:12px;font-weight:500;
+    padding:1px 8px;border-radius:2em;
+    border:1px solid var(--border);
+    color:var(--fg-muted);
+    background:var(--canvas);
+    white-space:nowrap;
+  }
+  .card.active .badge{
+    color:var(--success-fg);
+    background:var(--success-subtle);
+    border-color:var(--success-border);
+  }
+
+  .card-body{padding:16px;display:flex;flex-direction:column;gap:14px;}
+
+  .field label{
+    display:block;
+    font-size:12px;font-weight:600;color:var(--fg);
+    margin-bottom:6px;
+  }
+  .req{color:var(--danger);margin-left:3px;font-weight:600;}
+
+  .txt{
+    width:100%;
+    font-family:inherit;
+    font-size:13px;color:var(--fg);
+    background:var(--canvas);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:7px 12px;
+    outline:none;
+    transition:border-color .12s ease,box-shadow .12s ease;
+  }
+  .txt:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(9,105,218,.12);}
+  .txt::placeholder{color:#8c959f;}
+  .mono{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;font-size:12px;}
+
+  textarea.txt{resize:vertical;min-height:150px;line-height:1.55;white-space:pre-wrap;}
+
+  .missing{
+    font-size:12px;color:var(--fg-muted);
+    margin:-4px 0 0;
+    min-height:0;
+  }
+  .missing.show{color:#9a6700;}
+
+  .card-foot{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 16px;
+    border-top:1px solid var(--border-muted);
+    background:var(--canvas);
+  }
+  .saved-hint{font-size:12px;color:var(--fg-muted);opacity:0;transition:opacity .2s ease;}
+  .saved-hint.show{opacity:1;}
+  .saved-hint::before{content:"✓ ";color:var(--success-fg);}
+  .btn-del{
+    font-family:inherit;font-size:13px;
+    color:var(--fg-muted);background:none;border:none;cursor:pointer;
+    padding:4px 6px;border-radius:6px;transition:color .12s ease,background .12s ease;
+  }
+  .btn-del:hover{color:var(--danger);background:#faeeee;}
+
+  /* ---- Foot note ---- */
+  .foot-note{
+    margin-top:28px;
+    padding:12px 16px;
+    background:var(--canvas-subtle);
+    border:1px solid var(--border);
+    border-radius:6px;
+    font-size:12px;color:var(--fg-muted);line-height:1.7;
+  }
+  .foot-note strong{color:var(--fg);font-weight:600;}
+
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+  @media (max-width:520px){
+    .wrap{padding:24px 16px 60px;}
+    .grid{grid-template-columns:1fr;}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none !important;}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <div class="title-block">
+        <h1>報回設定台</h1>
+        <p class="sub">每張卡片對應一個群組。三個必填欄位都填好後狀態燈亮起，代表 bot 會在該群組、以設定的關鍵字觸發時發送內容。</p>
+      </div>
+      <button class="btn btn-primary" id="addBtn"><span class="plus">＋</span>新增卡片</button>
+    </header>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="foot-note">
+      <strong>目前資料只存在這台裝置的瀏覽器裡。</strong> 你在這裡的新增與修改，別人打開同一個連結時看不到，也還沒有連動到 bot。若要「所有人共同編輯同一份、而且 bot 會照卡片動作」，需要再把這個頁面接上你的 GAS。
+    </div>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+
+  var STORE_KEY = "reportCards_v1";
+  var memory = null;
+
+  function readStore(){
+    try{ var raw = localStorage.getItem(STORE_KEY); return raw ? JSON.parse(raw) : null; }
+    catch(e){ return memory; }
+  }
+  function writeStore(data){
+    memory = data;
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify(data)); }catch(e){}
+  }
+  function uid(){ return "c" + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+  var DEFAULT_CONTENT =
+"<<<每日問題件回報>>>\n" +
+"日期：{{DATE}}\n" +
+"超過六點後 問題件請自己入問題\n" +
+"為了避免漏件 請配合!! 謝謝!!\n" +
+"趙克強:\n牟善賢:\n詹益全:\n鄒樂勳:\n吳萌瑜:\n梁志強:\n" +
+"温正杭:\n蔡俊傑:\n戴勝堂:\n郭香蘭:\n學長: \n" +
+"--------------------請接龍";
+
+  function seed(){
+    return [
+      { id:uid(), name:"每日問題件回報", groupId:"C421e973455a8031f78e9b151002707cf", keyword:"回報0", content:DEFAULT_CONTENT },
+      { id:uid(), name:"", groupId:"", keyword:"", content:"" }
+    ];
+  }
+
+  var cards = readStore();
+  if(!Array.isArray(cards)){ cards = seed(); writeStore(cards); }
+  // 相容舊資料：補上缺少的 keyword 欄位
+  cards.forEach(function(c){ if(typeof c.keyword === "undefined") c.keyword = ""; });
+
+  var grid = document.getElementById("grid");
+  function save(){ writeStore(cards); }
+
+  function flashSaved(el){
+    if(!el) return;
+    el.classList.add("show");
+    clearTimeout(el._t);
+    el._t = setTimeout(function(){ el.classList.remove("show"); }, 1100);
+  }
+
+  function render(){
+    grid.innerHTML = "";
+    cards.forEach(function(card){ grid.appendChild(buildCard(card)); });
+  }
+
+  function buildCard(card){
+    var el = document.createElement("div");
+    el.className = "card";
+
+    // ---- head ----
+    var head = document.createElement("div");
+    head.className = "card-head";
+
+    var lamp = document.createElement("span");
+    lamp.className = "lamp";
+
+    var nameInput = document.createElement("input");
+    nameInput.className = "name-input";
+    nameInput.type = "text";
+    nameInput.value = card.name;
+    nameInput.placeholder = "未命名卡片";
+    nameInput.setAttribute("aria-label","卡片名稱");
+
+    var badge = document.createElement("span");
+    badge.className = "badge";
+
+    head.appendChild(lamp);
+    head.appendChild(nameInput);
+    head.appendChild(badge);
+
+    // ---- body ----
+    var body = document.createElement("div");
+    body.className = "card-body";
+
+    function makeField(labelText, value, placeholder, opts){
+      opts = opts || {};
+      var field = document.createElement("div");
+      field.className = "field";
+      var label = document.createElement("label");
+      label.textContent = labelText;
+      var req = document.createElement("span");
+      req.className = "req"; req.textContent = "*";
+      label.appendChild(req);
+      var input = opts.multiline ? document.createElement("textarea") : document.createElement("input");
+      if(!opts.multiline) input.type = "text";
+      input.className = "txt" + (opts.mono ? " mono" : "");
+      input.value = value;
+      input.placeholder = placeholder;
+      if(opts.mono) input.spellcheck = false;
+      input.setAttribute("aria-label", labelText);
+      field.appendChild(label);
+      field.appendChild(input);
+      return { field:field, input:input };
+    }
+
+    var idF  = makeField("群組 ID", card.groupId, "C 開頭的群組 ID", {mono:true});
+    var kwF  = makeField("觸發關鍵字", card.keyword, "例如：回報0", {mono:true});
+    var cF   = makeField("回報內容", card.content, "在這裡貼上要發送的訊息內容", {multiline:true});
+
+    var missing = document.createElement("p");
+    missing.className = "missing";
+
+    body.appendChild(idF.field);
+    body.appendChild(kwF.field);
+    body.appendChild(cF.field);
+    body.appendChild(missing);
+
+    // ---- foot ----
+    var foot = document.createElement("div");
+    foot.className = "card-foot";
+    var delBtn = document.createElement("button");
+    delBtn.className = "btn-del";
+    delBtn.textContent = "刪除卡片";
+    var hint = document.createElement("span");
+    hint.className = "saved-hint";
+    hint.textContent = "已儲存";
+    foot.appendChild(delBtn);
+    foot.appendChild(hint);
+
+    function refreshStatus(){
+      var miss = [];
+      if(!card.groupId.trim()) miss.push("群組 ID");
+      if(!card.keyword.trim()) miss.push("觸發關鍵字");
+      if(!card.content.trim()) miss.push("回報內容");
+
+      if(miss.length === 0){
+        el.classList.add("active");
+        badge.textContent = "已啟用";
+        missing.textContent = "";
+        missing.classList.remove("show");
+      }else{
+        el.classList.remove("active");
+        badge.textContent = "待設定";
+        missing.textContent = "尚未填寫：" + miss.join("、");
+        missing.classList.add("show");
+      }
+    }
+    refreshStatus();
+
+    nameInput.addEventListener("input", function(){ card.name = nameInput.value; save(); flashSaved(hint); });
+    idF.input.addEventListener("input", function(){ card.groupId = idF.input.value; refreshStatus(); save(); flashSaved(hint); });
+    kwF.input.addEventListener("input", function(){ card.keyword = kwF.input.value; refreshStatus(); save(); flashSaved(hint); });
+    cF.input.addEventListener("input", function(){ card.content = cF.input.value; refreshStatus(); save(); flashSaved(hint); });
+
+    delBtn.addEventListener("click", function(){
+      var label = card.name.trim() || "這張卡片";
+      if(confirm("確定刪除「" + label + "」嗎？此動作無法復原。")){
+        cards = cards.filter(function(c){ return c.id !== card.id; });
+        save(); render();
+      }
+    });
+
+    el.appendChild(head);
+    el.appendChild(body);
+    el.appendChild(foot);
+    return el;
+  }
+
+  document.getElementById("addBtn").addEventListener("click", function(){
+    cards.push({ id:uid(), name:"", groupId:"", keyword:"", content:"" });
+    save(); render();
+    var last = grid.lastElementChild;
+    if(last){
+      last.scrollIntoView({behavior:"smooth", block:"center"});
+      var nm = last.querySelector(".name-input");
+      if(nm) nm.focus();
+    }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
