@@ -104,8 +104,8 @@
   <div class="wrap">
     <header class="top">
       <div class="title-block">
-        <h1>報回設定台</h1>
-        <p class="sub">每張卡片對應一個群組與一個觸發關鍵字。編輯後按「儲存」才會套用；「重新載入」會取回雲端最新版本。同一群組可建立多張卡片，用不同關鍵字觸發不同訊息。</p>
+        <h1>單號捕手 - 回報內容設定台</h1>
+        <p class="sub">在群組中輸入觸發關鍵字，單號捕手就會回報設定好的文字內容。</p>
       </div>
     </header>
 
@@ -214,8 +214,8 @@
 
   function setFootNote(){
     footNote.innerHTML = GAS_URL
-      ? "<strong>已連接 GAS。</strong> 按「儲存」才會把變更送上雲端，所有打開此連結的人共用同一份資料。多人協作建議先「重新載入」取回最新版再編輯；同時儲存時以最後儲存者為準。"
-      : "<strong>尚未連接 GAS（僅存本機）。</strong> 變更只留在這台裝置。把上方程式碼裡的 GAS_URL 填好即可啟用雲端同步。";
+      ? "<strong>已連接 GAS</strong> 編輯完成後按下「儲存」才會套用更新。所有人共用同一份資料，修改時，以最後按下儲存的版本為準。按「重新載入」以載入最新版本。"
+      : "<strong>尚未連接 GAS（僅存本機）</strong> 變更只留在這台裝置。把 GAS 程式碼裡的 GAS_URL 填好即可啟用雲端同步。";
   }
 
   // ---- 與 GAS 溝通 ----
@@ -301,9 +301,9 @@
       field.appendChild(label); field.appendChild(input);
       return { field:field, input:input };
     }
-    var idF = makeField("群組 ID", card.groupId, "C 開頭的群組 ID", {mono:true});
-    var kwF = makeField("觸發關鍵字", card.keyword, "例如：回報0", {mono:true});
-    var cF  = makeField("回報內容", card.content, "在這裡貼上要發送的訊息內容", {multiline:true});
+    var idF = makeField("群組 ID", card.groupId, "在群組中發送「查ID」以取得該群組ID", {mono:true});
+    var kwF = makeField("觸發關鍵字", card.keyword, "輸入此關鍵字以觸發回報", {mono:true});
+    var cF  = makeField("回報內容", card.content, "在這裡輸入回報內容", {multiline:true});
     var missing = document.createElement("p"); missing.className="missing";
     body.appendChild(idF.field); body.appendChild(kwF.field); body.appendChild(cF.field); body.appendChild(missing);
 
