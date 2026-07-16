@@ -133,11 +133,11 @@
     </header>
 
     <div class="toolbar">
-      <div class="status" id="status" data-state="readonly"><span class="dot"></span><span id="statusText">唯讀模式（僅供檢視）</span></div>
+      <div class="status" id="status" data-state="readonly"><span class="dot"></span><span id="statusText">檢視模式</span></div>
       <div class="actions">
         <button class="btn btn-default" id="reloadBtn">重新載入</button>
         <button class="btn btn-primary" id="saveBtn" disabled>儲存</button>
-        <button class="btn btn-default" id="editToggle">🔓 進入編輯</button>
+        <button class="btn btn-default" id="editToggle">進入編輯模式</button>
       </div>
     </div>
 
@@ -154,7 +154,7 @@
   <div class="modal-mask" id="pwMask" hidden>
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pwTitle">
       <h2 id="pwTitle">進入編輯模式</h2>
-      <p class="desc">請輸入密碼以啟用修改、新增與刪除。</p>
+      <p class="desc">請輸入密碼</p>
       <input type="password" id="pwInput" class="txt" placeholder="密碼" autocomplete="off" aria-label="密碼">
       <p class="pw-err" id="pwErr"></p>
       <div class="modal-actions">
@@ -248,7 +248,7 @@
   function refreshStatusDisplay(){
     if(!editMode){
       statusEl.setAttribute("data-state","readonly");
-      statusText.textContent = "唯讀模式（僅供檢視）";
+      statusText.textContent = "檢視模式";
     }else{
       setStatus(dirty ? "dirty" : "clean");
     }
@@ -273,14 +273,14 @@
   // 套用目前模式（唯讀 / 編輯）到整個畫面
   function applyMode(){
     document.body.classList.toggle("read-only", !editMode);
-    editToggle.textContent = editMode ? "🔒 鎖定" : "🔓 進入編輯";
+    editToggle.textContent = editMode ? "離開編輯" : "進入編輯";
     refreshStatusDisplay();
     refreshButtons();
     render();
   }
 
   function setFootNote(){
-    var lock = "頁面預設為<strong>唯讀模式</strong>，點右上角「🔓 進入編輯」並輸入密碼後，才能修改、新增或刪除卡片。";
+    var lock = "頁面預設為<strong>檢視模式</strong>，進入編輯模式才能修改、新增或刪除卡片。";
     var body = GAS_URL
       ? "<strong>已連接 GAS</strong> 編輯完成後按下「儲存」才會套用更新。所有人共用同一份資料，修改時，以最後按下儲存的版本為準。按「重新載入」以載入最新版本。回報內容中的 {{DATE}} 會呈現當天的月日，如：7/21。"
       : "<strong>尚未連接 GAS（僅存本機）</strong> 變更只留在這台裝置。把 GAS 程式碼裡的 GAS_URL 填好即可啟用雲端同步。";
