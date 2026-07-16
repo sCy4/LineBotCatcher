@@ -31,8 +31,6 @@
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{background:var(--canvas);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
-  /* 頂端品牌條：呼應 LINE bot 頭像的經典藍 */
-  body::before{content:"";position:fixed;top:0;left:0;right:0;height:4px;background:var(--brand);z-index:100;}
   .wrap{max-width:1012px;margin:0 auto;padding:32px 24px 80px;}
 
   /* ---- Header ---- */
@@ -52,6 +50,7 @@
   .status[data-state="dirty"] .dot{background:var(--warn-dot);}
   .status[data-state="saving"] .dot,.status[data-state="loading"] .dot{background:var(--accent);}
   .status[data-state="error"] .dot{background:var(--danger);}
+  .status[data-state="readonly"] .dot{background:var(--fg-muted);}
   .status[data-state="dirty"]{color:var(--warn-fg);}
   .status[data-state="error"]{color:var(--danger);}
 
@@ -76,6 +75,8 @@
   .name-input:hover{border-color:rgba(255,255,255,.4);}
   .name-input:focus{border-color:rgba(255,255,255,.8);background:rgba(255,255,255,.14);box-shadow:0 0 0 3px rgba(255,255,255,.18);}
   .name-input::placeholder{color:rgba(255,255,255,.6);font-weight:500;}
+  .name-input[readonly]{cursor:default;}
+  .name-input[readonly]:hover{border-color:transparent;background:transparent;}
   .badge{font-size:12px;font-weight:500;padding:1px 8px;border-radius:2em;border:1px solid rgba(255,255,255,.35);color:#fff;background:rgba(255,255,255,.15);white-space:nowrap;}
   .card.active .badge{color:var(--success-fg);background:var(--success-subtle);border-color:var(--success-border);}
 
@@ -84,6 +85,9 @@
   .txt{width:100%;font-family:inherit;font-size:13px;color:var(--fg);background:var(--box);border:1px solid var(--border);border-radius:6px;padding:7px 12px;outline:none;transition:border-color .12s ease,box-shadow .12s ease;}
   .txt:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(15,76,129,.15);}
   .txt::placeholder{color:#8c959f;}
+  /* 唯讀外觀：底色微調，但文字維持清晰好讀 */
+  .txt[readonly]{background:var(--canvas);cursor:default;}
+  .txt[readonly]:focus{border-color:var(--border);box-shadow:none;}
   .mono{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;font-size:12px;}
   textarea.txt{resize:vertical;min-height:150px;line-height:1.55;white-space:pre-wrap;}
   .missing{font-size:12px;color:var(--warn-fg);margin:-4px 0 0;min-height:0;}
@@ -98,15 +102,28 @@
   .btn-add:hover{background:#f3f4f6;border-color:var(--brand);color:var(--brand);}
   .btn-add .plus{margin-right:6px;font-weight:600;}
 
+  /* 唯讀模式時隱藏編輯專用元件 */
+  body.read-only .add-row{display:none;}
+  body.read-only #saveBtn{display:none;}
+
   .foot-note{margin-top:28px;padding:12px 16px;background:var(--box);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--fg-muted);line-height:1.7;}
   .foot-note strong{color:var(--fg);font-weight:600;}
+
+  /* ---- 密碼視窗 ---- */
+  .modal-mask{position:fixed;inset:0;background:rgba(31,35,40,.45);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
+  .modal-mask[hidden]{display:none;}
+  .modal{background:var(--box);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(31,35,40,.2);width:100%;max-width:360px;padding:22px;}
+  .modal h2{font-size:16px;font-weight:600;margin:0 0 6px;}
+  .modal .desc{font-size:13px;color:var(--fg-muted);margin:0 0 14px;}
+  .modal .pw-err{font-size:12px;color:var(--danger);min-height:16px;margin:8px 0 0;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;}
 
   :focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
   @media (max-width:520px){.wrap{padding:24px 16px 60px;}.grid{grid-template-columns:1fr;}.toolbar{align-items:stretch;}.actions{width:100%;}.actions .btn{flex:1;}}
   @media (prefers-reduced-motion:reduce){*{transition:none !important;}}
 </style>
 </head>
-<body>
+<body class="read-only">
   <div class="wrap">
     <header class="top">
       <div class="title-block">
@@ -116,10 +133,11 @@
     </header>
 
     <div class="toolbar">
-      <div class="status" id="status" data-state="clean"><span class="dot"></span><span id="statusText">已儲存</span></div>
+      <div class="status" id="status" data-state="readonly"><span class="dot"></span><span id="statusText">唯讀模式（僅供檢視）</span></div>
       <div class="actions">
         <button class="btn btn-default" id="reloadBtn">重新載入</button>
         <button class="btn btn-primary" id="saveBtn" disabled>儲存</button>
+        <button class="btn btn-default" id="editToggle">🔓 進入編輯</button>
       </div>
     </div>
 
@@ -132,6 +150,20 @@
     <div class="foot-note" id="footNote"></div>
   </div>
 
+  <!-- 密碼視窗 -->
+  <div class="modal-mask" id="pwMask" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pwTitle">
+      <h2 id="pwTitle">進入編輯模式</h2>
+      <p class="desc">請輸入密碼以啟用修改、新增與刪除。</p>
+      <input type="password" id="pwInput" class="txt" placeholder="密碼" autocomplete="off" aria-label="密碼">
+      <p class="pw-err" id="pwErr"></p>
+      <div class="modal-actions">
+        <button class="btn btn-default" id="pwCancel">取消</button>
+        <button class="btn btn-primary" id="pwOk">確認</button>
+      </div>
+    </div>
+  </div>
+
 <script>
 (function(){
   "use strict";
@@ -139,6 +171,9 @@
   // ============================================================
   // ⚠️ 貼上你的 GAS 網頁應用程式網址（結尾是 /exec）。留空 = 只存本機不同步。
   var GAS_URL = "https://script.google.com/macros/s/AKfycbztxBVKzhh4p-e3TV8xo5LiDt51YMQ9x-JLL69I2r42Y6q8fbSEEDFoE3_cWw1OtA1m/exec";
+
+  // ⚠️ 進入編輯模式的密碼，請改成你自己的。留空字串 "" 則等同不設密碼。
+  var EDIT_PASSWORD = "8531";
   // ============================================================
 
   var STORE_KEY = "reportCards_v1";   // 已「儲存」的基準版本（不隨打字更新）
@@ -181,7 +216,8 @@
   // ---- 狀態 ----
   var cards = [];
   var dirty = false;
-  var busy = false;   // 儲存/載入進行中
+  var busy = false;      // 儲存/載入進行中
+  var editMode = false;  // false = 唯讀，true = 可編輯
 
   var grid = document.getElementById("grid");
   var statusEl = document.getElementById("status");
@@ -189,7 +225,13 @@
   var saveBtn = document.getElementById("saveBtn");
   var reloadBtn = document.getElementById("reloadBtn");
   var addBtn = document.getElementById("addBtn");
+  var editToggle = document.getElementById("editToggle");
   var footNote = document.getElementById("footNote");
+  var pwMask = document.getElementById("pwMask");
+  var pwInput = document.getElementById("pwInput");
+  var pwErr = document.getElementById("pwErr");
+  var pwOk = document.getElementById("pwOk");
+  var pwCancel = document.getElementById("pwCancel");
 
   function setStatus(state){
     var map = {
@@ -202,10 +244,20 @@
     statusEl.setAttribute("data-state", state);
     statusText.textContent = map[state] || "";
   }
+  // 靜止狀態下的狀態列文字（依模式而定）
+  function refreshStatusDisplay(){
+    if(!editMode){
+      statusEl.setAttribute("data-state","readonly");
+      statusText.textContent = "唯讀模式（僅供檢視）";
+    }else{
+      setStatus(dirty ? "dirty" : "clean");
+    }
+  }
   function refreshButtons(){
     saveBtn.disabled = busy || !dirty;
     reloadBtn.disabled = busy;
     addBtn.disabled = busy;
+    editToggle.disabled = busy;
   }
   function markDirty(){
     dirty = true;
@@ -214,14 +266,41 @@
   }
   function markClean(){
     dirty = false;
-    setStatus("clean");
+    refreshStatusDisplay();
     refreshButtons();
   }
 
+  // 套用目前模式（唯讀 / 編輯）到整個畫面
+  function applyMode(){
+    document.body.classList.toggle("read-only", !editMode);
+    editToggle.textContent = editMode ? "🔒 鎖定" : "🔓 進入編輯";
+    refreshStatusDisplay();
+    refreshButtons();
+    render();
+  }
+
   function setFootNote(){
-    footNote.innerHTML = GAS_URL
+    var lock = "頁面預設為<strong>唯讀模式</strong>，點右上角「🔓 進入編輯」並輸入密碼後，才能修改、新增或刪除卡片。";
+    var body = GAS_URL
       ? "<strong>已連接 GAS</strong> 編輯完成後按下「儲存」才會套用更新。所有人共用同一份資料，修改時，以最後按下儲存的版本為準。按「重新載入」以載入最新版本。回報內容中的 {{DATE}} 會呈現當天的月日，如：7/21。"
       : "<strong>尚未連接 GAS（僅存本機）</strong> 變更只留在這台裝置。把 GAS 程式碼裡的 GAS_URL 填好即可啟用雲端同步。";
+    footNote.innerHTML = lock + "<br>" + body;
+  }
+
+  // ---- 密碼視窗 ----
+  function openPw(){
+    pwInput.value = ""; pwErr.textContent = "";
+    pwMask.hidden = false;
+    setTimeout(function(){ pwInput.focus(); }, 0);
+  }
+  function closePw(){ pwMask.hidden = true; }
+  function tryPw(){
+    if(pwInput.value === EDIT_PASSWORD){
+      editMode = true; closePw(); applyMode();
+    }else{
+      pwErr.textContent = "密碼不正確，請再試一次。";
+      pwInput.select();
+    }
   }
 
   // ---- 與 GAS 溝通 ----
@@ -284,6 +363,7 @@
   }
 
   function buildCard(card){
+    var ro = !editMode;   // 唯讀
     var el = document.createElement("div"); el.className = "card";
 
     var head = document.createElement("div"); head.className = "card-head";
@@ -291,6 +371,7 @@
     var nameInput = document.createElement("input");
     nameInput.className="name-input"; nameInput.type="text"; nameInput.value=card.name;
     nameInput.placeholder="未命名卡片"; nameInput.setAttribute("aria-label","卡片名稱");
+    nameInput.readOnly = ro;
     var badge = document.createElement("span"); badge.className="badge";
     head.appendChild(lamp); head.appendChild(nameInput); head.appendChild(badge);
 
@@ -303,6 +384,7 @@
       if(!opts.multiline) input.type="text";
       input.className="txt"+(opts.mono?" mono":""); input.value=value; input.placeholder=placeholder;
       if(opts.mono) input.spellcheck=false;
+      input.readOnly = ro;
       input.setAttribute("aria-label",labelText);
       field.appendChild(label); field.appendChild(input);
       return { field:field, input:input };
@@ -314,6 +396,7 @@
     body.appendChild(idF.field); body.appendChild(kwF.field); body.appendChild(cF.field); body.appendChild(missing);
 
     var foot = document.createElement("div"); foot.className="card-foot";
+    foot.hidden = ro;   // 唯讀時隱藏刪除區
     var delBtn = document.createElement("button"); delBtn.className="btn-del"; delBtn.textContent="刪除卡片";
     foot.appendChild(delBtn);
 
@@ -343,7 +426,7 @@
   }
 
   addBtn.addEventListener("click", function(){
-    if(busy) return;
+    if(busy || !editMode) return;
     cards.push({ id:uid(), name:"", groupId:"", keyword:"", content:"" });
     markDirty(); render();
     var last=grid.lastElementChild;
@@ -352,6 +435,29 @@
   saveBtn.addEventListener("click", doSave);
   reloadBtn.addEventListener("click", doReload);
 
+  // 進入 / 離開編輯模式
+  editToggle.addEventListener("click", function(){
+    if(busy) return;
+    if(!editMode){ openPw(); return; }
+    // 離開編輯模式
+    if(dirty){
+      if(!confirm("有未儲存的變更，離開編輯模式會捨棄它們，確定嗎？")) return;
+      cards = normalize(readLocal() || seed());  // 還原成上次儲存的版本
+      dirty = false;
+    }
+    editMode = false;
+    applyMode();
+  });
+
+  // 密碼視窗事件
+  pwOk.addEventListener("click", tryPw);
+  pwCancel.addEventListener("click", closePw);
+  pwInput.addEventListener("keydown", function(e){
+    if(e.key==="Enter"){ e.preventDefault(); tryPw(); }
+    else if(e.key==="Escape"){ closePw(); }
+  });
+  pwMask.addEventListener("click", function(e){ if(e.target===pwMask) closePw(); });
+
   // 離開前提醒未儲存變更
   window.addEventListener("beforeunload", function(e){
     if(dirty){ e.preventDefault(); e.returnValue=""; }
@@ -359,6 +465,7 @@
 
   // ---- 啟動 ----
   setFootNote();
+  applyMode();   // 先套用唯讀基準畫面
   if(GAS_URL){
     busy = true; setStatus("loading"); refreshButtons();
     jsonpLoad(function(data){
