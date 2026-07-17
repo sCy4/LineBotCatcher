@@ -93,6 +93,7 @@
   .missing{font-size:12px;color:var(--warn-fg);margin:-4px 0 0;min-height:0;}
 
   .card-foot{display:flex;align-items:center;justify-content:flex-end;padding:10px 16px;border-top:1px solid var(--border-muted);background:var(--box);}
+  .card-foot[hidden]{display:none;}   /* 檢視模式隱藏刪除區（覆蓋上面的 display:flex） */
   .btn-del{font-family:inherit;font-size:13px;color:var(--fg-muted);background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:6px;transition:color .12s ease,background .12s ease;}
   .btn-del:hover{color:var(--danger);background:#faeeee;}
 
@@ -135,7 +136,6 @@
     <div class="toolbar">
       <div class="status" id="status" data-state="readonly"><span class="dot"></span><span id="statusText">檢視模式</span></div>
       <div class="actions">
-        <button class="btn btn-default" id="reloadBtn">重新載入</button>
         <button class="btn btn-primary" id="saveBtn" disabled>儲存</button>
         <button class="btn btn-default" id="editToggle">進入編輯模式</button>
       </div>
@@ -223,7 +223,6 @@
   var statusEl = document.getElementById("status");
   var statusText = document.getElementById("statusText");
   var saveBtn = document.getElementById("saveBtn");
-  var reloadBtn = document.getElementById("reloadBtn");
   var addBtn = document.getElementById("addBtn");
   var editToggle = document.getElementById("editToggle");
   var footNote = document.getElementById("footNote");
@@ -255,7 +254,6 @@
   }
   function refreshButtons(){
     saveBtn.disabled = busy || !dirty;
-    reloadBtn.disabled = busy;
     addBtn.disabled = busy;
     editToggle.disabled = busy;
   }
@@ -282,7 +280,7 @@
   function setFootNote(){
     var lock = "頁面預設為<strong>檢視模式</strong>，進入編輯模式才能修改、新增或刪除卡片。";
     var body = GAS_URL
-      ? "<strong>已連接 GAS</strong> 編輯完成後按下「儲存」才會套用更新。所有人共用同一份資料，修改時，以最後按下儲存的版本為準。按「重新載入」以載入最新版本。回報內容中的 {{DATE}} 會呈現當天的月日，如：7/21。"
+      ? "<strong>已連接 GAS</strong> 編輯完成後按下「儲存」才會套用更新。所有人共用同一份資料，修改時，以最後按下儲存的版本為準。重新整理頁面即可取得最新版本。回報內容中的 {{DATE}} 會呈現當天的月日，如：7/21。"
       : "<strong>尚未連接 GAS（僅存本機）</strong> 變更只留在這台裝置。把 GAS 程式碼裡的 GAS_URL 填好即可啟用雲端同步。";
     footNote.innerHTML = lock + "<br>" + body;
   }
@@ -323,7 +321,7 @@
     });
   }
 
-  // ---- 儲存 / 重新載入 ----
+  // ---- 儲存 ----
   function doSave(){
     if(busy || !dirty) return;
     busy = true; setStatus("saving"); refreshButtons();
@@ -334,25 +332,6 @@
       writeLocal(clone(cards)); busy = false; markClean();
     }).catch(function(){
       busy = false; setStatus("error"); refreshButtons();
-    });
-  }
-
-  function doReload(){
-    if(busy) return;
-    if(dirty && !confirm("有未儲存的變更，重新載入會捨棄它們，確定要繼續嗎？")) return;
-    busy = true; setStatus("loading"); refreshButtons();
-    if(!GAS_URL){
-      cards = normalize(readLocal() || seed());
-      busy = false; markClean(); render(); return;
-    }
-    jsonpLoad(function(data){
-      if(data && Array.isArray(data.cards)){
-        cards = normalize(data.cards);
-        writeLocal(clone(cards));
-      }else{
-        cards = normalize(readLocal() || seed());
-      }
-      busy = false; markClean(); render();
     });
   }
 
@@ -395,8 +374,9 @@
     var missing = document.createElement("p"); missing.className="missing";
     body.appendChild(idF.field); body.appendChild(kwF.field); body.appendChild(cF.field); body.appendChild(missing);
 
+    // 底部刪除區：僅在編輯模式顯示（檢視模式隱藏）
     var foot = document.createElement("div"); foot.className="card-foot";
-    foot.hidden = ro;   // 唯讀時隱藏刪除區
+    foot.hidden = ro;
     var delBtn = document.createElement("button"); delBtn.className="btn-del"; delBtn.textContent="刪除卡片";
     foot.appendChild(delBtn);
 
@@ -433,7 +413,6 @@
     if(last){ last.scrollIntoView({behavior:"smooth",block:"center"}); var nm=last.querySelector(".name-input"); if(nm) nm.focus(); }
   });
   saveBtn.addEventListener("click", doSave);
-  reloadBtn.addEventListener("click", doReload);
 
   // 進入 / 離開編輯模式
   editToggle.addEventListener("click", function(){
